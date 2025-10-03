@@ -61,4 +61,4 @@ To import directly into your Home Assistant instance, click:
 
 ## 💬 Feedback & Support
 
-For questions, feedback, or support, please visit the [Home Assistant Community Forum](https://community.home-assistant.io/).
+For questions, feedback, or support, please visit the [Home Assistant Community Forum](https://community.home-assistant.io/t/whirlpool-heat-up-timer-automatically-calculates-heat-up-time/)
