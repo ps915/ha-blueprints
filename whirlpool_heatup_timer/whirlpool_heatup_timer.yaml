@@ -1,0 +1,159 @@
+blueprint:
+  name: ♨️ Whirlpool Heat-up Timer ⏱️
+  description: |
+    # ⏱️ Whirlpool Heat-up Timer ♨️
+    **Version: 1.1**
+
+    Never wait again! This blueprint automatically calculates your whirlpool's **heat-up time** and starts a **timer** that tells you exactly when your desired temperature is reached. Always ready for your relaxing bath! 🛀✨
+
+    **Logic: 👇 How it works**
+    * **Trigger 🌡️:** The automation starts whenever the state of your whirlpool temperature sensor changes.
+    * **Heating Rate Check ⚡:**
+      * If enabled (via toggle), it uses the optional heating rate sensor if the value is valid and realistic.
+      * Otherwise, the **default heat rate** is used.
+    * **Validation 🛡️:**
+      * The sensor value is only used if it is between 75% and 150% of your configured Default Rate.
+      * If not valid → fallback to Default Rate.
+    * **Time Calculation ⏳:** Based on the current temperature, target temperature, and the validated heating rate, the estimated remaining time until the desired warmth is reached is calculated.
+    * **Start Timer 🚀:** The selected timer helper is set with the calculated duration and started, so you can track the countdown directly in your Home Assistant Dashboard.
+
+    <details> <summary><b>Changelog:</b> - Click to expand 📜</summary>
+
+    **Version 1.1**
+    - Added validation for optional heating rate (must be 75–150% of Default Rate).
+    - Added `use_dynamic_rate` toggle for easy control of dynamic sensor usage.
+    - More robust handling of invalid sensor values.
+
+    **Version 1.0**
+    - Initial release.
+    </details>
+
+    Required = *
+  domain: automation
+  input:
+    
+    temperatur_sensor:
+      name: Whirlpool Temperature * 🌡️
+      description: The sensor that provides the current whirlpool temperature.
+      selector:
+        entity:
+          domain: sensor
+    
+    zieltemperatur:
+      name: Target Temperature * ✨
+      description: Temperature in °C the whirlpool should be heated to.
+      default: 38
+      selector:
+        number:
+          min: 20
+          max: 45
+          step: 0.5
+          unit_of_measurement: "°C"
+          mode: slider
+    
+    standard_heizrate:
+      name: Default Heating Rate * ⚡
+      description: |
+        A fixed rate in °C per hour, the heating element can provide.
+      default: 2
+      selector:
+        number:
+          min: 0.1
+          max: 10
+          step: 0.1
+          unit_of_measurement: "°C/h"
+          mode: slider
+    
+    use_dynamic_rate:
+      name: Use Dynamic Heating Rate 📊
+      description: Toggle to use the optional heating rate sensor if available.  
+                   If OFF, the Default Heating Rate is always used.
+      default: true
+      selector:
+        boolean: {}   
+    
+    heizrate_sensor:
+      name: Heating Rate (Optional) 📈
+      description: |
+        <details>
+        <summary><b>ℹ️ Explanation & Setup Guide:</b> Click to expand</summary>
+    
+        This is an **optional sensor** that provides the **current heating rate** in °C per hour.
+    
+        - If enabled via the toggle and the value is valid, this sensor allows the automation to calculate a **more precise heating time**.
+        - **Validation rule:** The sensor value is only trusted if it lies between **75% and 150%** of your Default Heating Rate.
+          Otherwise, the system automatically falls back to the configured **Default Heating Rate**.
+    
+
+    
+        **⚙️ Recommended Setup: Statistics Sensor (Helper):** Create a helper that tracks your main temperature sensor's rate of change.
+          - **Statistic characteristic:** `Change second` (This gives you a rate in °C/second).
+          - **Sampling Size:** `100` 
+          - **Max age:** `0h 30m 00s`
+          - **Percentile:** `50` 
+          - **Precision:** `10` 
+    
+    
+        💡 *Tip:* If you don’t have such a sensor, leave this field empty – the Default Heating Rate will always be used.
+        </details>
+      default: []
+      selector:
+        entity:
+          domain: sensor
+
+    
+    aufheiz_timer:
+      name: Heat-up Timer * ⏰
+      description: |
+        The timer helper entity that will be set to the estimated heat-up duration.
+      selector:
+        entity:
+          domain: timer
+trigger:
+  - platform: state
+    entity_id: !input temperatur_sensor
+
+condition:
+  - condition: numeric_state
+    entity_id: !input temperatur_sensor
+    below: !input zieltemperatur
+
+action:
+  - variables:
+      temp_entity: !input temperatur_sensor
+      rate_entity: !input heizrate_sensor
+      target_temp: !input zieltemperatur
+      default_rate: !input standard_heizrate
+      use_dynamic: !input use_dynamic_rate
+
+      current_temp: "{{ states(temp_entity) | float(0) }}"
+      dynamic_rate: "{{ states(rate_entity) | float(0) if rate_entity != '' else 0 }}"
+      # Validation: only use dynamic rate if within 75%–150% of default
+      validated_rate: >-
+        {% set min_rate = default_rate * 0.75 %}
+        {% set max_rate = default_rate * 1.5 %}
+        {% if use_dynamic and dynamic_rate > 0 and min_rate <= dynamic_rate <= max_rate %}
+          {{ dynamic_rate }}
+        {% else %}
+          {{ default_rate }}
+        {% endif %}
+      remaining_hours: >-
+        {% if validated_rate > 0 %}
+          {{ (target_temp - current_temp) / validated_rate }}
+        {% else %}
+          0
+        {% endif %}
+      remaining_seconds: "{{ (remaining_hours * 3600) | int }}"
+      # Maximum allowed timer duration (10 days in seconds)
+      max_timer_seconds: 864000
+
+  - condition: template
+    value_template: "{{ remaining_seconds <= max_timer_seconds }}"
+
+  - service: timer.start
+    target:
+      entity_id: !input aufheiz_timer
+    data:
+      duration: "{{ remaining_seconds }}"
+
+mode: single
