@@ -4,6 +4,9 @@
 
 Never wait again! This Home Assistant blueprint automatically calculates your whirlpool's **heat-up time** and starts a **timer** that tells you exactly when your desired temperature is reached. Always ready for your relaxing bath! 🛀✨
 
+<img width="690" height="115" alt="Bildschirmfoto 2025-10-03 um 18 20 13" src="https://github.com/user-attachments/assets/661b9770-0592-4ec1-a9be-edf586a03306" />
+
+
 ---
 
 ## 🔧 Inputs
