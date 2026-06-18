@@ -1,3 +1,5 @@
+Hier die neue README.md mit dem 1.2-Changelog-Eintrag und der korrigierten Sensor-Beschreibung (°C/s statt irreführend °C/h):
+
 # ♨️ Whirlpool Heat-up Timer ⏱️
 
 **Version 1.2**
@@ -17,7 +19,7 @@ Never wait again! This Home Assistant blueprint automatically calculates your wh
 | `zieltemperatur` | Target temperature (°C) | Default: 38 |
 | `standard_heizrate` | Default heating rate in °C/hour | Default: 2 |
 | `use_dynamic_rate` | Toggle to use optional heating rate sensor for dynamic calculation | Default: true |
-| `heizrate_sensor` | Optional sensor providing real-time heating rate (°C/hour) | Optional; must be 75–150% of Default Rate to be used |
+| `heizrate_sensor` | Optional Statistics sensor providing the real-time heating rate (`Change second`, °C/s). The value is automatically converted to °C/h inside the blueprint | Optional; converted value must be 75–150% of Default Rate to be used |
 | `aufheiz_timer` | Timer helper entity to track the calculated heat-up duration | Required |
 
 ---
@@ -28,12 +30,14 @@ Never wait again! This Home Assistant blueprint automatically calculates your wh
 2. **Heating Rate Check ⚡:**  
    - Uses optional heating rate sensor if enabled and value is valid.  
    - Otherwise, falls back to Default Heating Rate.  
-3. **Validation 🛡️:**  
+3. **Unit Conversion 🔄:**  
+   - The optional sensor delivers °C/second (`Change second`); the blueprint converts it to °C/hour (×3600) so it is comparable to the Default Rate.  
+4. **Validation 🛡️:**  
    - Dynamic sensor value is only used if it is between 75%–150% of Default Rate.  
    - Invalid or missing values → Default Rate is used.  
-4. **Time Calculation ⏳:**  
+5. **Time Calculation ⏳:**  
    - Calculates estimated remaining time based on current temp, target temp, and validated heating rate.  
-5. **Start Timer 🚀:**  
+6. **Start Timer 🚀:**  
    - The selected timer helper is set to the calculated duration and started. Countdown can be monitored in your dashboard.
 
 ---
@@ -49,7 +53,9 @@ To import directly into your Home Assistant instance, click:
 
 ## 📜 Changelog
 
-
+**Version 1.2**  
+- Fixed unit mismatch: the dynamic heating rate sensor (`Change second`, °C/s) is now converted to °C/h (×3600) before validation. Previously the raw value (~0.0005) never passed the 75–150% check against the Default Rate (°C/h), so the dynamic rate was silently ignored and the Default Rate was always used.  
+- Clarified the `heizrate_sensor` input description (raw value is °C/s and converted internally).  
 
 **Version 1.1**  
 - Added validation for optional heating rate (must be 75–150% of Default Rate).  
