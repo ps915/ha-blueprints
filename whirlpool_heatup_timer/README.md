@@ -1,6 +1,6 @@
 # ♨️ Whirlpool Heat-up Timer ⏱️
 
-**Version 1.1**
+**Version 1.2**
 
 Never wait again! This Home Assistant blueprint automatically calculates your whirlpool's **heat-up time** and starts a **timer** that tells you exactly when your desired temperature is reached. Always ready for your relaxing bath! 🛀✨
 
