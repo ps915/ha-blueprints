@@ -2,7 +2,7 @@ blueprint:
   name: ♨️ Whirlpool Heat-up Timer ⏱️
   description: |
     # ⏱️ Whirlpool Heat-up Timer ♨️
-    **Version: 1.1**
+    **Version: 1.2**
 
     Never wait again! This blueprint automatically calculates your whirlpool's **heat-up time** and starts a **timer** that tells you exactly when your desired temperature is reached. Always ready for your relaxing bath! 🛀✨
 
@@ -18,6 +18,9 @@ blueprint:
     * **Start Timer 🚀:** The selected timer helper is set with the calculated duration and started, so you can track the countdown directly in your Home Assistant Dashboard.
 
     <details> <summary><b>Changelog:</b> - Click to expand 📜</summary>
+
+    **Version 1.2**
+    - Fixed unit mismatch: the dynamic heating rate sensor (`Change second`, °C/s) is now converted to °C/h (×3600) before validation. Previously the value (~0.0005) never passed the 75–150% check against the Default Rate (°C/h), so the dynamic rate was silently ignored and the Default Rate was always used.
 
     **Version 1.1**
     - Added validation for optional heating rate (must be 75–150% of Default Rate).
@@ -78,10 +81,11 @@ blueprint:
         <details>
         <summary><b>ℹ️ Explanation & Setup Guide:</b> Click to expand</summary>
     
-        This is an **optional sensor** that provides the **current heating rate** in °C per hour.
+        This is an **optional sensor** that provides the **current heating rate**.
+        The raw sensor value (°C/second) is automatically converted to °C/hour inside the blueprint.
     
         - If enabled via the toggle and the value is valid, this sensor allows the automation to calculate a **more precise heating time**.
-        - **Validation rule:** The sensor value is only trusted if it lies between **75% and 150%** of your Default Heating Rate.
+        - **Validation rule:** The converted sensor value is only trusted if it lies between **75% and 150%** of your Default Heating Rate.
           Otherwise, the system automatically falls back to the configured **Default Heating Rate**.
     
 
@@ -127,7 +131,9 @@ action:
       use_dynamic: !input use_dynamic_rate
 
       current_temp: "{{ states(temp_entity) | float(0) }}"
-      dynamic_rate: "{{ states(rate_entity) | float(0) if rate_entity != '' else 0 }}"
+      # Sensor provides the rate in °C/second (Statistics "Change second").
+      # Convert to °C/hour (×3600) so it is comparable to the Default Rate (°C/h).
+      dynamic_rate: "{{ (states(rate_entity) | float(0)) * 3600 if rate_entity != '' else 0 }}"
       # Validation: only use dynamic rate if within 75%–150% of default
       validated_rate: >-
         {% set min_rate = default_rate * 0.75 %}
