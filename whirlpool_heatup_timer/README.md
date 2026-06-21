@@ -1,5 +1,3 @@
-Hier die neue README.md mit dem 1.2-Changelog-Eintrag und der korrigierten Sensor-Beschreibung (°C/s statt irreführend °C/h):
-
 # ♨️ Whirlpool Heat-up Timer ⏱️
 
 **Version 1.2**
